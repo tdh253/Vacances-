@@ -44,6 +44,7 @@ button{font:inherit;cursor:pointer}
 .d.rest{background:var(--rest);color:#3b6fe0}.d.out{opacity:.4}
 .d.today{outline:2px solid #3b6fe0}
 .dot{width:7px;height:7px;border-radius:50%;margin-top:3px;background:transparent}
+.fr{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}.fr i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}.fr small{color:var(--mut)}.fin h2{margin:0 0 6px;font-size:17px}.fin p{margin:10px 0 0;font-size:13px;color:var(--mut)}
 .leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut);margin-top:12px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
 .cyc{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);flex-wrap:wrap}
@@ -63,6 +64,7 @@ input,select{font:inherit;padding:8px;border:1px solid var(--line);border-radius
 <header><div class="flag"></div><div><b>GESTT</b><small>Gestion du temps de travail · 12h08</small></div></header>
 <main>
 <div class="card"><div class="row" id="cnts"></div></div>
+<div class="card fin" id="fin"></div>
 <div class="card">
 <div class="nav"><h2>📅 Calendrier</h2><div style="display:flex;gap:6px;align-items:center"><button class="ib" id="pv">‹</button><span class="m" id="mt"></span><button class="ib" id="nx">›</button></div></div>
 <div class="grid" id="g"></div>
@@ -115,14 +117,23 @@ function renderCal(){
 function open(h){$('sh').innerHTML=h;$('bg').classList.add('on')}
 function close(){$('bg').classList.remove('on')}
 $('bg').onclick=function(e){if(e.target===$('bg'))close()};
-function all(){save();renderC();renderCal()}
+function renderFin(){
+ var y=now.getFullYear(),av=0,need=0,h='<h2>🎯 À poser avant le 31/12/'+y+'</h2>';
+ if(S.start){for(var d=dn(tk);d<=dn(y+'-12-31');d++){var t=new Date(d*864e5),k=key(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate());if(work(k)&&!S.posed[k])av++}}
+ ['RTC','CA','CF'].forEach(function(n){var c=S.counters.filter(function(x){return x.name===n})[0];if(!c)return;
+  var v=Math.max(0,c.bal),nt=c.unit==='j'?v:v/MIN;need+=nt;
+  h+='<div class="fr"><span><i style="background:'+col(c)+'"></i>'+n+'</span><b>'+fmt(c,v)+'</b><small>≈ '+(Math.round(nt*10)/10).toString().replace('.',',')+' vacation(s)</small></div>'});
+ var nn=Math.ceil(need-1e-9);
+ h+=S.start?'<p>Vacations restantes d’ici le 31/12 : <b>'+av+'</b> · à poser : <b>'+nn+'</b>'+(nn>av?' <b class="neg">— il en manque '+(nn-av)+'</b>':'')+'</p>':'<p>Renseigne le 1er jour de ton cycle pour compter les vacations restantes.</p>';
+ $('fin').innerHTML=h}
+function all(){save();renderC();renderCal();renderFin()}
 function dayM(k){
  var w=work(k),ps=S.posed[k],c=ps?byId(ps):null,t=k.split('-').reverse().join('/');
  if(w===null){open('<h3>'+t+'</h3><p>Renseigne d’abord le 1er jour de ton cycle en bas de page.</p><button class="btn alt" onclick="close()">OK</button>');return}
  if(c){open('<h3>'+t+'</h3><p>Posé en <b>'+c.name+'</b> ('+fmt(c,cost(c))+').</p><button class="btn del" id="un">Annuler la pose (rend '+fmt(c,cost(c))+')</button><button class="btn alt" onclick="close()">Fermer</button>');
   $('un').onclick=function(){c.bal+=cost(c);delete S.posed[k];close();all()};return}
  if(!w){open('<h3>'+t+'</h3><p>Jour de repos dans ton cycle.</p><button class="btn alt" onclick="close()">Fermer</button>');return}
- var h='<h3>Poser le '+t+'</h3><p style="color:var(--mut);font-size:13px;margin-top:-6px">Nuit de travail = 12h08 (ou 1 jour pour un compteur en jours)</p><div class="chips">';
+ var h='<h3>Poser le '+t+'</h3><p style="color:var(--mut);font-size:13px;margin-top:-6px">Une vacation = 12h08 (ou 1 jour pour un compteur en jours)</p><div class="chips">';
  S.counters.forEach(function(x,i){h+='<button class="chip" style="background:'+col(x)+'" data-i="'+i+'">'+x.name+' · '+fmt(x,x.bal)+'</button>'});
  open(h+'</div><button class="btn alt" onclick="close()">Annuler</button>');
  $('sh').querySelectorAll('.chip').forEach(function(e){e.onclick=function(){var x=S.counters[+e.dataset.i];x.bal-=cost(x);S.posed[k]=x.id;close();all()}})}
@@ -148,4 +159,5 @@ all();
 </script>
 </body>
 </html>
+
 
